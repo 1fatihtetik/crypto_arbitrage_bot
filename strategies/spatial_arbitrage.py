@@ -4,6 +4,8 @@ import logging
 from typing import Dict
 from shared.redis_client import RedisManager
 from shared.safety_manager import SafetyManager
+from shared.latency_tracker import LatencyTracker
+from strategies.regime_detection import RegimeDetectionEngine
 from shared.metrics import NET_PROFIT
 
 logger = logging.getLogger("SpatialArbitrage")
@@ -12,6 +14,9 @@ class SpatialArbitrageEngine:
     def __init__(self, redis_manager: RedisManager, safety_manager: SafetyManager):
         self.redis = redis_manager
         self.safety_manager = safety_manager
+        self.latency_tracker = LatencyTracker(rtt_threshold_ms=100)
+        self.regime_engine = RegimeDetectionEngine()
+        
         self.latest_books: Dict[str, dict] = {}
         # Fees and slippage assumptions
         self.ASSUMED_FEE_RATE = 0.001
@@ -45,6 +50,11 @@ class SpatialArbitrageEngine:
                 net_profit = gross_profit - fee_total - self.ASSUMED_SLIPPAGE
 
                 if net_profit > 0:
+                    # Let's say we have an open websocket ping, check latency
+                    if not (self.latency_tracker.is_latency_acceptable(buy_ex) and self.latency_tracker.is_latency_acceptable(sell_ex)):
+                        logger.warning(f"Skipping arbitrage due to high latency on {buy_ex} or {sell_ex}")
+                        continue
+                    
                     logger.info(f"Arbitrage Found! Buy on {buy_ex} @ {best_ask_price}, Sell on {sell_ex} @ {best_bid_price} | Net Profit: {net_profit:.2f}")
                     NET_PROFIT.labels(buy_exchange=buy_ex, sell_exchange=sell_ex).observe(net_profit)
 
