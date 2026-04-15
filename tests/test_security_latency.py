@@ -27,7 +27,7 @@ def test_fernet_encryption_cycle():
         if os.path.exists(test_enc_file): os.remove(test_enc_file)
 
 def test_latency_tracker_bounds():
-    tracker = LatencyTracker(rtt_threshold_ms=10) # very tight bounds
+    tracker = LatencyTracker(rtt_threshold_ms=10.0) # very tight bounds
     
     tracker.start_ping("binance")
     time.sleep(0.001) # 1ms
@@ -36,7 +36,7 @@ def test_latency_tracker_bounds():
     assert tracker.is_latency_acceptable("binance") is True
     
     tracker.start_ping("okx")
-    time.sleep(0.015) # 15ms
+    time.sleep(0.015) # 15ms is > 10ms!
     tracker.record_pong("okx")
     
     assert tracker.is_latency_acceptable("okx") is False

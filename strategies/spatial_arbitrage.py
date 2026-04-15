@@ -14,7 +14,7 @@ class SpatialArbitrageEngine:
     def __init__(self, redis_manager: RedisManager, safety_manager: SafetyManager):
         self.redis = redis_manager
         self.safety_manager = safety_manager
-        self.latency_tracker = LatencyTracker(rtt_threshold_ms=100)
+        self.latency_tracker = LatencyTracker(rtt_threshold_ms=10.0)
         self.regime_engine = RegimeDetectionEngine()
         
         self.latest_books: Dict[str, dict] = {}

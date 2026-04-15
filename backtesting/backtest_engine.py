@@ -45,8 +45,8 @@ class BacktestEngine:
                 # Assuming opp gives estimated gross profit percentage
                 gross_profit = opp['expected_profit']
                 
-                # Apply extra slippage if latency > 100ms
-                extra_slip = max(0, (self.latency_ms - 100) / 1000 * 0.01)
+                # Apply extra slippage if latency > 10ms
+                extra_slip = max(0, (self.latency_ms - 10) / 1000 * 0.01)
                 
                 # 50% Stronger Architecture: Dynamic Book Depth Slippage!
                 # Quadratic slippage based on capital size forcing constraints

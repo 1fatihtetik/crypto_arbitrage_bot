@@ -5,7 +5,7 @@ from typing import Dict
 logger = logging.getLogger("LatencyTracker")
 
 class LatencyTracker:
-    def __init__(self, rtt_threshold_ms: float = 100.0):
+    def __init__(self, rtt_threshold_ms: float = 10.0):
         """
         :param rtt_threshold_ms: Maximum acceptable round-trip time in milliseconds.
         """
