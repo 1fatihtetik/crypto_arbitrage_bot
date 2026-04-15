@@ -5,9 +5,10 @@ import logging
 logger = logging.getLogger("RegimeDetection")
 
 class RegimeDetectionEngine:
-    def __init__(self, adx_threshold=25, period=14):
+    def __init__(self, adx_threshold=25, period=14, bb_std=2.0):
         self.adx_threshold = adx_threshold
         self.period = period
+        self.bb_std = bb_std
         
     def calculate_atr(self, df: pd.DataFrame) -> pd.Series:
         """Calculate Average True Range."""
@@ -39,23 +40,40 @@ class RegimeDetectionEngine:
         
         return adx
 
+    def calculate_bbw(self, df: pd.DataFrame) -> pd.Series:
+        """Calculate Bollinger Band Width."""
+        sma = df['close'].rolling(self.period).mean()
+        std = df['close'].rolling(self.period).std()
+        upper_band = sma + (std * self.bb_std)
+        lower_band = sma - (std * self.bb_std)
+        
+        bbw = (upper_band - lower_band) / sma
+        return bbw
+
     def detect_regime(self,  ohlcv_df: pd.DataFrame) -> str:
         """
         Takes a dataframe with 'high', 'low', 'close' columns.
-        Returns 'TRENDING' if ADX > threshold, else 'RANGING'.
+        Returns 'TRENDING' if ADX > threshold OR BBW is significantly expanding.
         """
         if len(ohlcv_df) < self.period * 2:
             return "UNKNOWN" # Not enough data
             
         adx_series = self.calculate_adx(ohlcv_df)
-        current_adx = adx_series.iloc[-1]
+        bbw_series = self.calculate_bbw(ohlcv_df)
         
-        if pd.isna(current_adx):
+        current_adx = adx_series.iloc[-1]
+        current_bbw = bbw_series.iloc[-1]
+        
+        if pd.isna(current_adx) or pd.isna(current_bbw):
             return "UNKNOWN"
             
-        if current_adx >= self.adx_threshold:
-            logger.debug(f"Regime Detected: TRENDING (ADX: {current_adx:.2f})")
+        # dual confirmation definition of 50% stronger:
+        # A breakout or trend can be identified by high ADX OR a large BBW expansion (e.g., > 10% width)
+        bbw_threshold = 0.10 
+        
+        if current_adx >= self.adx_threshold or current_bbw >= bbw_threshold:
+            logger.debug(f"Regime Detected: TRENDING (ADX: {current_adx:.2f}, BBW: {current_bbw:.2f})")
             return "TRENDING"
         else:
-            logger.debug(f"Regime Detected: RANGING (ADX: {current_adx:.2f})")
+            logger.debug(f"Regime Detected: RANGING (ADX: {current_adx:.2f}, BBW: {current_bbw:.2f})")
             return "RANGING"

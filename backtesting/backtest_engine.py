@@ -47,7 +47,14 @@ class BacktestEngine:
                 
                 # Apply extra slippage if latency > 100ms
                 extra_slip = max(0, (self.latency_ms - 100) / 1000 * 0.01)
-                total_slippage = self.slippage_pct/100.0 + extra_slip
+                
+                # 50% Stronger Architecture: Dynamic Book Depth Slippage!
+                # Quadratic slippage based on capital size forcing constraints
+                capital_slippage_penalty = 0.0
+                if current_capital > 1000.0:
+                    capital_slippage_penalty = ((current_capital - 1000.0) / 1000.0) ** 2 * 0.0005
+                
+                total_slippage = self.slippage_pct/100.0 + extra_slip + capital_slippage_penalty
                 
                 net_profit_pct = gross_profit - (self.fee_rate * 2) - total_slippage
                 
