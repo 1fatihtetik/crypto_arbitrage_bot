@@ -12,7 +12,7 @@ async def test_failsafe_execution_halt_under_10ms():
     safety_manager.update_heartbeat("binance", int(time.time() * 1000))
     
     # Executor with massive simulated latency (500ms) to ensure orders remain PENDING
-    executor = SimulationExecutor(safety_manager=safety_manager, simulated_latency_ms=500.0)
+    executor = SimulationExecutor(safety_manager=safety_manager, network_latency_ms=500.0)
     await executor.start()
     
     # 1. Submit Mock Orders

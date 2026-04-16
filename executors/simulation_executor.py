@@ -18,9 +18,12 @@ class VirtualOrder:
         self.latency_mock_task = None
 
 class SimulationExecutor:
-    def __init__(self, safety_manager: SafetyManager, simulated_latency_ms: float = 50.0):
+    def __init__(self, safety_manager: SafetyManager, network_latency_ms: float = 20.0, computation_latency_ms: float = 2.0, execution_latency_ms: float = 25.0):
         self.safety_manager = safety_manager
-        self.simulated_latency_ms = simulated_latency_ms
+        self.network_latency_ms = network_latency_ms
+        self.computation_latency_ms = computation_latency_ms
+        self.execution_latency_ms = execution_latency_ms
+        self.total_tick_to_trade_ms = network_latency_ms + computation_latency_ms + execution_latency_ms
         self.virtual_orders: Dict[str, VirtualOrder] = {}
         self.execution_loop_task = None
         
@@ -53,9 +56,8 @@ class SimulationExecutor:
     async def _process_order_with_latency(self, order: VirtualOrder, target_book_state: dict):
         """Simulates network latency and executes if depth permits."""
         try:
-            # 1. Induce defined network Round Trip Time (RTT) delay
-            await asyncio.sleep(self.simulated_latency_ms / 1000.0)
-            
+            # 1. Induce Tick-to-Trade delay (Networking + Computation + Execution Latency)
+            await asyncio.sleep(self.total_tick_to_trade_ms / 1000.0)
             # 2. Check if order was canceled during latency
             if order.status == "CANCELED" or not self.safety_manager.check_health():
                 return
